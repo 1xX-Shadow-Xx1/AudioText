@@ -1,0 +1,13 @@
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\bin\Debug\net9.0\AudioText.deps.json
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\bin\Debug\net9.0\AudioText.dll
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\bin\Debug\net9.0\AudioText.pdb
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.csproj.AssemblyReference.cache
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.AssemblyInfoInputs.cache
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.AssemblyInfo.cs
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.csproj.CoreCompileInputs.cache
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.sourcelink.json
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.dll
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\refint\AudioText.dll
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\AudioText.pdb
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\obj\Debug\net9.0\ref\AudioText.dll
