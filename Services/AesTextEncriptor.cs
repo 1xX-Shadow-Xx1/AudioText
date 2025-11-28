@@ -15,7 +15,7 @@ namespace AudioText.Services
     public class AesTextEncryptor : IEncriptador
     {
         // Clave secreta (256 bits/32 bytes). NOTA: En producción, no debe estar aquí.
-        private readonly byte[] _claveBytes = Encoding.UTF8.GetBytes("estaesunaclavesupersecretade32bytes12");
+        private readonly byte[] _claveBytes = Encoding.UTF8.GetBytes("ClaveSecretaParaElProyectoAudioT");
 
         /// <inheritdoc />
         public string Encriptar(string textoPlano)

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.IO;
+using System;
+using NAudio.Wave; // Necesario para Mp3FileReader y WaveFileWriter
+using System.Diagnostics; // Ya lo tienes, para Debug.WriteLine
 
 namespace AudioText.Helpers
 {
@@ -10,6 +13,7 @@ namespace AudioText.Helpers
     {
         /// <summary>
         /// Convierte el archivo de audio subido (MP3, etc.) a formato WAV, si es necesario.
+        /// (Criterio 1.1: Controlar formatos no deseados, convirtiéndolos internamente).
         /// </summary>
         /// <param name="rutaArchivoOriginal">La ruta del archivo subido por el usuario.</param>
         /// <param name="rutaDestinoTemp">La ruta donde se guardará el archivo WAV temporal.</param>
@@ -18,46 +22,40 @@ namespace AudioText.Helpers
         {
             string extension = Path.GetExtension(rutaArchivoOriginal).ToLower();
 
-            // ... validaciones iniciales ...
+            // 1. Si ya es WAV, no se necesita conversión.
+            if (extension == ".wav")
+            {
+                Debug.WriteLine("Formato WAV detectado. Sin necesidad de conversión.");
+                return rutaArchivoOriginal;
+            }
 
+            // 2. Si es MP3, realizamos la conversión interna real con NAudio.
             if (extension == ".mp3")
             {
-                // ** IMPLEMENTACIÓN REAL CON NAUDIO **
                 try
                 {
-                    // Usamos Mp3FileReader de NAudio para convertir.
-                    using (var reader = new NAudio.Wave.Mp3FileReader(rutaArchivoOriginal))
+                    Debug.WriteLine($"Iniciando conversión de MP3 a WAV: {rutaArchivoOriginal}");
+
+                    // Usamos Mp3FileReader de NAudio para leer el MP3
+                    using (var reader = new Mp3FileReader(rutaArchivoOriginal))
                     {
-                        NAudio.Wave.WaveFileWriter.CreateWaveFile(rutaDestinoTemp, reader);
+                        // Usamos WaveFileWriter para escribir el audio descomprimido al archivo WAV temporal
+                        WaveFileWriter.CreateWaveFile(rutaDestinoTemp, reader);
                     }
+
+                    Debug.WriteLine($"Conversión exitosa. Archivo WAV guardado en: {rutaDestinoTemp}");
                     // Retornamos la ruta del nuevo archivo WAV temporal
                     return rutaDestinoTemp;
                 }
                 catch (Exception ex)
                 {
-                    // Manejo de errores de conversión real
-                    throw new InvalidOperationException($"Fallo la conversión de MP3 a WAV: {ex.Message}");
+                    // Si el archivo MP3 está corrupto o la conversión falla por algún motivo de códec.
+                    throw new InvalidOperationException($"Fallo la conversión de MP3 a WAV. Verifique el archivo o el códec de audio: {ex.Message}");
                 }
             }
 
-            // Criterio 1.1: Controlar y convertir formatos no deseados (como .MP3).
-            if (extension == ".mp3")
-            {
-                // ** Lógica de conversión de MP3 a WAV **
-                // NOTA: Para implementar la conversión real, necesitarías una librería como NAudio.
-                // Por ejemplo: new Mp3FileReader(rutaArchivoOriginal).Save(rutaDestinoTemp);
-
-                // --- INICIO DE IMPLEMENTACIÓN SIMULADA ---
-                Debug.WriteLine("Simulando conversión de MP3 a WAV. Se requiere NAudio para la conversión real.");
-                throw new NotImplementedException(
-                    "Conversión de MP3 a WAV no implementada. " +
-                    "Para continuar, use un archivo '.wav' o agregue la librería 'NAudio' para la conversión interna."
-                );
-                // --- FIN DE IMPLEMENTACIÓN SIMULADA ---
-            }
-
-            // Si es otro formato, se rechaza.
-            throw new NotSupportedException($"El formato '{extension}' no es soportado. Use .MP3 o .WAV.");
+            // 3. Si es otro formato no admitido. (Control de formatos no deseados)
+            throw new NotSupportedException($"El formato '{extension}' no es soportado. Use .MP3 (con conversión interna) o .WAV.");
         }
     }
 }

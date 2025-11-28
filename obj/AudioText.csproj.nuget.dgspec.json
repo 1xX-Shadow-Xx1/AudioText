@@ -51,13 +51,17 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Google.Cloud.Speech.V1": {
+              "target": "Package",
+              "version": "[3.9.0, )"
+            },
+            "Google.Cloud.Speech.V2": {
+              "target": "Package",
+              "version": "[1.6.0, )"
+            },
             "NAudio": {
               "target": "Package",
               "version": "[2.2.1, )"
-            },
-            "System.Speech": {
-              "target": "Package",
-              "version": "[10.0.0, )"
             }
           },
           "imports": [
