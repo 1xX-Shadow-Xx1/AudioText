@@ -2,3 +2,4 @@
 bin/
 obj/
 *.user
+ggml-base.bin
