@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "gISfg50x2jY=",
+  "dgSpecHash": "N9fEBb2xwKk=",
   "success": true,
-  "projectFilePath": "C:\\Users\\kevin\\Documents\\Repositorios-GITHUB\\AudioText\\AudioText\\AudioText.csproj",
+  "projectFilePath": "C:\\Users\\kevin\\Documents\\Repositorios-GITHUB\\AudioText\\AudioText\\AudioText\\AudioText.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kevin\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\kevin\\.nuget\\packages\\json.more.net\\2.1.1\\json.more.net.2.1.1.nupkg.sha512",
