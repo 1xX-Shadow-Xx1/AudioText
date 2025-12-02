@@ -12,22 +12,10 @@ namespace AudioText.Presentacion.Ventanas
 {
     public partial class FormCarga : Form
     {
-        // Evento para avisar al FormPrincipal que se quiere cancelar
-        public event EventHandler OnCancelarClick;
-
         public FormCarga()
         {
             InitializeComponent();
             this.ControlBox = false; // Quitar botón X
-        }
-
-        private void btnCancelar_Click(object sender, EventArgs e)
-        {
-            lblMensaje.Text = "Cancelando operación...";
-            btnCancelar.Enabled = false; // Evitar doble clic
-
-            // Disparamos el evento para que el FormPrincipal detenga el proceso
-            OnCancelarClick?.Invoke(this, EventArgs.Empty);
         }
 
         // Método seguro para actualizar la barra desde otro hilo

@@ -17,6 +17,14 @@ namespace AudioText.Services
         // Nombre del archivo del modelo que descargaste en el Paso 1
         private const string ModelFileName = "ggml-base.bin";
 
+        /// <summary>
+        /// Convierte audio a texto utilizando el modelo local de Whisper.
+        /// </summary>
+        /// <param name="rutaArchivo">Ruta absoluta del archivo de audio.</param>
+        /// <param name="progresoTexto">Reportador de progreso para texto parcial.</param>
+        /// <param name="progresoPorcentaje">Reportador de progreso en porcentaje (0-100).</param>
+        /// <param name="token">Token de cancelación.</param>
+        /// <returns>Texto transcrito.</returns>
         public async Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje, CancellationToken token)
         {
             if (!File.Exists(ModelFileName)) throw new FileNotFoundException($"Falta el modelo '{ModelFileName}'.");

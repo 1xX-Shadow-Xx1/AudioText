@@ -30,7 +30,6 @@
         {
             pbProgreso = new ProgressBar();
             lblMensaje = new Label();
-            btnCancelar = new Button();
             SuspendLayout();
             // 
             // pbProgreso
@@ -49,29 +48,17 @@
             lblMensaje.TabIndex = 11;
             lblMensaje.Text = "Procesando...";
             // 
-            // btnCancelar
-            // 
-            btnCancelar.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnCancelar.Location = new Point(331, 76);
-            btnCancelar.Name = "btnCancelar";
-            btnCancelar.Size = new Size(68, 24);
-            btnCancelar.TabIndex = 12;
-            btnCancelar.Text = "Cancelar";
-            btnCancelar.UseVisualStyleBackColor = true;
-            btnCancelar.Click += btnCancelar_Click;
-            // 
             // FormCarga
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(411, 112);
-            Controls.Add(btnCancelar);
             Controls.Add(lblMensaje);
             Controls.Add(pbProgreso);
             FormBorderStyle = FormBorderStyle.FixedToolWindow;
             Name = "FormCarga";
             StartPosition = FormStartPosition.CenterParent;
-            Text = "FormCarga";
+            Text = "Transcribiendo el audio";
             ResumeLayout(false);
             PerformLayout();
         }
@@ -80,6 +67,5 @@
 
         private ProgressBar pbProgreso;
         private Label lblMensaje;
-        private Button btnCancelar;
     }
 }

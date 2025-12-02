@@ -105,7 +105,7 @@ namespace AudioText.Presentacion
             {
                 using (var formCarga = new FormCarga())
                 {
-                    formCarga.OnCancelarClick += (s, args) => cts.Cancel();
+                    // formCarga.OnCancelarClick += (s, args) => cts.Cancel(); // Removed
 
                     try
                     {

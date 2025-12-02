@@ -98,3 +98,4 @@ C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText\obj\D
 C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText\obj\Debug\net9.0\AudioText.pdb
 C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText\obj\Debug\net9.0\ref\AudioText.dll
 C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText\bin\Debug\net9.0\ggml-base.bin
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText\bin\Debug\net9.0\secrets.json

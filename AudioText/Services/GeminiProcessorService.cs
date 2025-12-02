@@ -4,14 +4,26 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace AudioText.Services
 {
+    /// <summary>
+    /// Servicio para procesar audio utilizando la API de Google Gemini.
+    /// </summary>
     public class GeminiProcessorService : IProcesadorAudio
     {
-        // ⚠️ RECUERDA: Pega aquí tu API KEY de Google AI Studio
-        private const string ApiKey = "AIzaSyBkP5B-1xsGD-W9UnLvuMRQ3AmGm8pEgzc";
+        private const string SecretsFileName = "secrets.json";
+        private string? _apiKey;
 
+        /// <summary>
+        /// Convierte audio a texto utilizando la API de Google Gemini.
+        /// </summary>
+        /// <param name="rutaArchivo">Ruta absoluta del archivo de audio.</param>
+        /// <param name="progresoTexto">Reportador de progreso para texto parcial (no soportado por todos los modelos).</param>
+        /// <param name="progresoPorcentaje">Reportador de progreso en porcentaje (0-100).</param>
+        /// <param name="token">Token de cancelación.</param>
+        /// <returns>Texto transcrito.</returns>
         public async Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje, CancellationToken token)
         {
             if (!File.Exists(rutaArchivo)) throw new FileNotFoundException("Archivo no encontrado.");
@@ -28,7 +40,11 @@ namespace AudioText.Services
                     progresoPorcentaje?.Report(10);
 
                     // 1. Inicializar el cliente
-                    var googleAI = new GoogleAI(ApiKey);
+                    if (string.IsNullOrEmpty(_apiKey))
+                    {
+                         _apiKey = ObtenerApiKey();
+                    }
+                    var googleAI = new GoogleAI(_apiKey);
 
                     // CORRECCIÓN 1: Usamos el string directo en lugar del Enum para evitar errores
                     var model = googleAI.GenerativeModel("gemini-2.5-flash");
@@ -111,6 +127,39 @@ namespace AudioText.Services
                 ".ogg" => "audio/ogg",
                 _ => "audio/mp3"
             };
+        }
+
+        /// <summary>
+        /// Lee la API Key desde el archivo secrets.json.
+        /// </summary>
+        /// <returns>La API Key de Gemini.</returns>
+        private string ObtenerApiKey()
+        {
+            if (!File.Exists(SecretsFileName))
+            {
+                throw new FileNotFoundException($"No se encontró el archivo de secretos '{SecretsFileName}'.");
+            }
+
+            try
+            {
+                string json = File.ReadAllText(SecretsFileName);
+                using (JsonDocument doc = JsonDocument.Parse(json))
+                {
+                    if (doc.RootElement.TryGetProperty("GeminiApiKey", out JsonElement keyElement))
+                    {
+                        string? key = keyElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            return key;
+                        }
+                    }
+                }
+                throw new InvalidOperationException("La clave 'GeminiApiKey' no se encontró o está vacía en secrets.json.");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error al leer la API Key: {ex.Message}");
+            }
         }
     }
 }
