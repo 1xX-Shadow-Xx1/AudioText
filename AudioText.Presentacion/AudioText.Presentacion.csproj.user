@@ -4,5 +4,8 @@
     <Compile Update="FormPrincipal.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="Ventanas\FormCarga.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 </Project>

@@ -17,14 +17,19 @@ namespace AudioText.Services
         // Nombre del archivo del modelo que descargaste en el Paso 1
         private const string ModelFileName = "ggml-base.bin";
 
-        public async Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto = null, IProgress<int> progresoPorcentaje = null)
+        public async Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje, CancellationToken token)
         {
             if (!File.Exists(ModelFileName)) throw new FileNotFoundException($"Falta el modelo '{ModelFileName}'.");
             if (!File.Exists(rutaArchivo)) throw new FileNotFoundException("Archivo de audio no encontrado.");
 
             try
             {
-                return await ProcessAudioAsync(rutaArchivo, progresoTexto, progresoPorcentaje);
+                // Pasamos el token al proceso interno
+                return await ProcessAudioAsync(rutaArchivo, progresoTexto, progresoPorcentaje, token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Re-lanzamos para que el formulario sepa que fue cancelado
             }
             catch (Exception ex)
             {
@@ -32,8 +37,9 @@ namespace AudioText.Services
             }
         }
 
-        private async Task<string> ProcessAudioAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje)
+        private async Task<string> ProcessAudioAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje, CancellationToken token)
         {
+
             // 1. Obtener la duración total del audio para calcular el %
             TimeSpan duracionTotal;
             using (var reader = new AudioFileReader(rutaArchivo))
@@ -50,7 +56,7 @@ namespace AudioText.Services
             StringBuilder transcripcionCompleta = new StringBuilder();
 
             // 2. Procesar
-            await foreach (var segment in processor.ProcessAsync(fileStream))
+            await foreach (var segment in processor.ProcessAsync(fileStream, token)) // El token interno de Whisper a veces falla, controlamos manual abajo
             {
                 string nuevoTexto = segment.Text;
                 transcripcionCompleta.Append(nuevoTexto);

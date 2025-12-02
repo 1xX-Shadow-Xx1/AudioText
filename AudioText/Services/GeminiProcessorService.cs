@@ -12,7 +12,7 @@ namespace AudioText.Services
         // ⚠️ RECUERDA: Pega aquí tu API KEY de Google AI Studio
         private const string ApiKey = "AIzaSyBkP5B-1xsGD-W9UnLvuMRQ3AmGm8pEgzc";
 
-        public async Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto = null, IProgress<int> progresoPorcentaje = null)
+        public async Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje, CancellationToken token)
         {
             if (!File.Exists(rutaArchivo)) throw new FileNotFoundException("Archivo no encontrado.");
 
@@ -20,6 +20,10 @@ namespace AudioText.Services
             {
                 try
                 {
+
+                    // Chequeo de cancelación inicial
+                    token.ThrowIfCancellationRequested();
+
                     progresoTexto?.Report("Conectando con Gemini 1.5 Flash...\r\n");
                     progresoPorcentaje?.Report(10);
 
@@ -36,6 +40,9 @@ namespace AudioText.Services
 
                     progresoTexto?.Report($"Subiendo audio ({mimeType}) a la IA...\r\n");
                     progresoPorcentaje?.Report(30);
+
+                    // Chequeo de cancelación antes de subir
+                    token.ThrowIfCancellationRequested();
 
                     // 3. Crear la solicitud (CORRECCIÓN DE TIPOS AQUÍ)
                     var request = new GenerateContentRequest
@@ -66,18 +73,25 @@ namespace AudioText.Services
                     progresoPorcentaje?.Report(50);
 
                     // 4. Enviar
-                    var response = await model.GenerateContent(request);
+                    var response = await model.GenerateContent(request, null ,token);
 
-                    progresoPorcentaje?.Report(100);
+                    progresoPorcentaje?.Report(90);
 
                     if (response.Text != null)
                     {
+                        progresoTexto?.Report("¡Transcripción recibida con éxito!\r\n");
+                        progresoPorcentaje?.Report(100);
                         return response.Text;
                     }
                     else
                     {
                         return "Gemini no devolvió texto (posible audio vacío).";
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Si se cancela, lanzamos la excepción para que el Form lo sepa
+                    throw;
                 }
                 catch (Exception ex)
                 {

@@ -180,3 +180,5 @@ C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText.Prese
 C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText.Presentacion\obj\Debug\net9.0-windows\AudioText.Presentacion.pdb
 C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText.Presentacion\obj\Debug\net9.0-windows\AudioText.Presentacion.genruntimeconfig.cache
 C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText.Presentacion\obj\Debug\net9.0-windows\ref\AudioText.Presentacion.dll
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText.Presentacion\bin\Debug\net9.0-windows\ggml-base.bin
+C:\Users\kevin\Documents\Repositorios-GITHUB\AudioText\AudioText\AudioText.Presentacion\obj\Debug\net9.0-windows\AudioText.Presentacion.Ventanas.FormCarga.resources

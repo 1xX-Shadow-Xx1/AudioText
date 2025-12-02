@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AudioText.Interfaces
+﻿namespace AudioText.Interfaces
 {
     /// <summary>
     /// Define el contrato para cualquier servicio que convierta un archivo de audio a texto.
@@ -18,6 +12,6 @@ namespace AudioText.Interfaces
         /// </summary>
         /// <param name="rutaArchivo">La ruta completa al archivo de audio.</param>
         /// <returns>La cadena de texto transcrita.</returns>
-        Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto = null, IProgress<int> progresoPorcentaje = null);
+        Task<string> ConvertirATextoAsync(string rutaArchivo, IProgress<string> progresoTexto, IProgress<int> progresoPorcentaje, CancellationToken token);
     }
 }

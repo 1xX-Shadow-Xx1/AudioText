@@ -38,7 +38,6 @@
             txtResultadoEncriptado = new TextBox();
             btnEncriptar = new Button();
             btnDesencriptar = new Button();
-            pbProgreso = new ProgressBar();
             ConfigOpcionConverter = new ComboBox();
             grpConversion.SuspendLayout();
             grpEncriptacion.SuspendLayout();
@@ -132,13 +131,6 @@
             btnDesencriptar.UseVisualStyleBackColor = true;
             btnDesencriptar.Click += btnDesencriptar_Click;
             // 
-            // pbProgreso
-            // 
-            pbProgreso.Location = new Point(35, 331);
-            pbProgreso.Name = "pbProgreso";
-            pbProgreso.Size = new Size(518, 23);
-            pbProgreso.TabIndex = 9;
-            // 
             // ConfigOpcionConverter
             // 
             ConfigOpcionConverter.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -153,9 +145,8 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1282, 728);
+            ClientSize = new Size(1282, 1133);
             Controls.Add(ConfigOpcionConverter);
-            Controls.Add(pbProgreso);
             Controls.Add(btnDesencriptar);
             Controls.Add(btnEncriptar);
             Controls.Add(grpEncriptacion);
@@ -185,7 +176,6 @@
         private Button btnEncriptar;
         private TextBox txtResultadoEncriptado;
         private Button btnDesencriptar;
-        private ProgressBar pbProgreso;
         private ComboBox ConfigOpcionConverter;
     }
 }
