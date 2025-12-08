@@ -7,25 +7,23 @@ using System.Threading.Tasks;
 namespace AudioText.Interfaces
 {
     /// <summary>
-    /// Define el contrato para cualquier servicio de encriptación reversible de texto.
-    /// Permite cambiar el algoritmo de encriptación (ej: de AES a RSA) sin afectar
-    /// el código que lo consume (Cumple OCP).
+    /// Define el contrato para servicios de encriptación y desencriptación de texto.
+    /// Permite la implementación de diferentes algoritmos (AES, RSA, etc.) manteniendo una interfaz común.
     /// </summary>
     public interface IEncriptador
     {
         /// <summary>
-        /// Convierte una cadena de texto plano en una cadena de texto encriptada.
+        /// Encripta una cadena de texto plano utilizando el algoritmo configurado.
         /// </summary>
-        /// <param name="textoPlano">El texto original a encriptar.</param>
-        /// <returns>El texto encriptado.</returns>
+        /// <param name="textoPlano">El texto original que se desea proteger.</param>
+        /// <returns>El texto cifrado resultante.</returns>
         string Encriptar(string textoPlano);
 
         /// <summary>
-        /// Desencripta una cadena de texto encriptada a su formato original (reversible).
-        /// (Cumple con el Criterio 1.3 - Opcional)
+        /// Desencripta una cadena de texto cifrado para recuperar el contenido original.
         /// </summary>
-        /// <param name="textoEncriptado">El texto encriptado a desencriptar.</param>
-        /// <returns>El texto plano original.</returns>
+        /// <param name="textoEncriptado">El texto cifrado que se desea procesar.</param>
+        /// <returns>El texto plano original recuperado.</returns>
         string Desencriptar(string textoEncriptado);
     }
 }

@@ -5,48 +5,52 @@ using AudioText.Services;
 
 namespace AudioText.Presentacion
 {
+    /// <summary>
+    /// Formulario principal de la aplicación AudioText.
+    /// Actúa como el controlador central (Orquestador) que coordina la interacción entre la interfaz de usuario (UI)
+    /// y los servicios de backend (Procesamiento de Audio, Encriptación, Conversión Binaria).
+    /// </summary>
     public partial class FormPrincipal : Form
     {
-        // Declaramos las interfaces (Dependencia del contrato, no de la clase concreta: DIP)
+        // Definición de dependencias utilizando Interfaces para desacoplar la implementación concreta.
+        // Esto facilita el cambio de motores (ej. de Whisper a Gemini) sin modificar el resto del código (Principio DIP).
         private IProcesadorAudio _procesadorAudio;
         private readonly IEncriptador _encriptador;
+        private IBinarioHexadecimalService _servicioBinarioHexadecimal;
 
-        // Variable para almacenar temporalmente el texto transcrito
-        private string _textoTranscritorio = string.Empty;
-
-        // Criterio 2 y 3: Documentación en español.
+        // Variables de estado para almacenar temporalmente los resultados de las operaciones en memoria.
+        private string _textoTranscritorio = string.Empty; // Almacena el resultado de la transcripción (Speech-to-Text).
+        private string _textoMaquina = string.Empty;       // Almacena la representación binaria/hexadecimal.
+        private string _textoEncriptado = string.Empty;    // Almacena el texto cifrado.
 
         /// <summary>
-        /// Constructor del formulario. Aquí se inicializan las dependencias (simulación de Inyección de Dependencia).
+        /// Constructor del formulario. Inicializa los componentes visuales y las dependencias por defecto.
         /// </summary>
-
         public FormPrincipal()
         {
             InitializeComponent();
 
-            // 1. Configurar la selección visual del ComboBox
-            // El índice 0 es el primer elemento que agregaste a la lista ("Whisper ( local )")
+            // Configuración inicial de los controles de selección (ComboBox).
+            // Establecemos el índice 0 para asegurar que siempre haya una opción válida seleccionada al inicio.
             ConfigOpcionConverter.SelectedIndex = 0;
+            ConfigOpcionConverterBinaryHex.SelectedIndex = 0;
 
-            // 2. Inicializar la lógica interna por defecto
-            // Esto asegura que la variable _procesadorAudio no sea null y coincida con la selección visual
+            // Inicialización de Servicios (Simulación de Inyección de Dependencias Manual).
+            // Por defecto, iniciamos con Whisper (Offline) y AES.
             this._procesadorAudio = new WhisperProcessorService();
-
-            // Inicializar el encriptador
             this._encriptador = new AesTextEncryptor();
+            this._servicioBinarioHexadecimal = new BinarioService();
         }
 
-        // --- MANEJO DE ARCHIVOS ---
+        // --- SECCIÓN: GESTIÓN DE ARCHIVOS ---
 
         /// <summary>
-        /// Evento que maneja el clic del botón 'Seleccionar Archivo de Audio'. (Criterio 1.1)
-        /// Abre un diálogo para que el usuario suba un archivo de audio (.MP3 o equivalentes).
+        /// Maneja el evento de clic para seleccionar un archivo de audio.
+        /// Abre un cuadro de diálogo nativo de Windows filtrado para archivos de audio compatibles.
         /// </summary>
         private void btnSeleccionarAudio_Click(object sender, EventArgs e)
         {
-            // Criterio 1.1: Solicitar la subida o la carga de un archivo de audio.
-
-            // Configura el diálogo para aceptar MP3, WAV, o ambos.
+            // Configuramos el filtro para sugerir formatos compatibles con nuestros servicios (MP3, WAV).
             ofdSeleccionarAudio.Filter = "Archivos de Audio (*.mp3;*.wav)|*.mp3;*.wav|Todos los archivos (*.*)|*.*";
             ofdSeleccionarAudio.Title = "Seleccionar Archivo de Audio (MP3 o WAV)";
 
@@ -54,32 +58,36 @@ namespace AudioText.Presentacion
             {
                 txtRutaArchivo.Text = ofdSeleccionarAudio.FileName;
 
-                // Limpiar resultados anteriores
+                // Limpieza de Estado:
+                // Al cargar un nuevo archivo, debemos limpiar los resultados de operaciones anteriores
+                // para evitar inconsistencias entre el archivo seleccionado y los datos mostrados.
                 txtResultadoTexto.Clear();
                 txtResultadoEncriptado.Clear();
+                txtResultadoTextoMaquina.Clear();
                 _textoTranscritorio = string.Empty;
+                _textoMaquina = string.Empty;
 
-                MessageBox.Show($"Archivo seleccionado: {Path.GetFileName(ofdSeleccionarAudio.FileName)}", "Archivo Cargado");
+                MessageBox.Show($"Archivo cargado exitosamente: {Path.GetFileName(ofdSeleccionarAudio.FileName)}", "Archivo Seleccionado", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
-        // --- CONVERSIÓN DE AUDIO A TEXTO ---
+        // --- SECCIÓN: TRANSCRIPCIÓN DE AUDIO (CORE) ---
 
         /// <summary>
-        /// Evento que maneja el clic del botón 'Convertir a Texto'. (Criterio 1.2)
-        /// Realiza la conversión utilizando el servicio IProcesadorAudio.
+        /// Inicia el proceso de conversión de Audio a Texto.
+        /// Este método maneja la lógica de UI, validación y orquestación de hilos en segundo plano.
         /// </summary>
         private async void btnConvertirATexto_Click(object sender, EventArgs e)
         {
-
-            // 1. Validaciones Iniciales
+            // 1. Validación de Entrada
             if (string.IsNullOrEmpty(txtRutaArchivo.Text) || !File.Exists(txtRutaArchivo.Text))
             {
-                MessageBox.Show("Por favor, seleccione un archivo de audio válido.", "Archivo Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Por favor, seleccione un archivo de audio válido antes de continuar.", "Archivo Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // 2. Configurar servicios
+            // 2. Selección de Estrategia (Strategy Pattern)
+            // Determinamos qué servicio de procesamiento usar basado en la selección del usuario.
             string opcion = ConfigOpcionConverter.Text;
 
             if (opcion.Contains("Whisper"))
@@ -91,168 +99,243 @@ namespace AudioText.Presentacion
                 this._procesadorAudio = new GeminiProcessorService();
             }
 
-
-            // 3. CAPTURAR VALORES DE LA UI ANTES DE ENTRAR AL HILO
+            // 3. Preparación de UI y Estado
             string rutaOriginal = txtRutaArchivo.Text;
-
-            // 4. Preparar la Interfaz
-            btnConvertirATexto.Enabled = false; // Deshabilitamos AQUI, no dentro del Task
+            btnConvertirATexto.Enabled = false; // Bloqueamos el botón para evitar múltiples clics (Reentrancia).
             txtResultadoTexto.Clear();
             txtResultadoEncriptado.Clear();
             _textoTranscritorio = string.Empty;
 
-            using (var cts = new CancellationTokenSource())
+            // Instanciamos la ventana de carga modal.
+            using (var formCarga = new FormCarga())
             {
-                using (var formCarga = new FormCarga())
+                try
                 {
-                    // formCarga.OnCancelarClick += (s, args) => cts.Cancel(); // Removed
-
-                    try
+                    // 4. Ejecución en Segundo Plano (Background Thread)
+                    // Usamos Task.Run para mover el trabajo pesado fuera del hilo de la UI y evitar que la ventana se congele ("No responde").
+                    Task<string> tareaProcesamiento = Task.Run(async () =>
                     {
-                        // Lanzamos la tarea pesada
-                        Task<string> tareaProcesamiento = Task.Run(async () =>
+                        try
                         {
-                            try
+                            // IMPORTANTE: Dentro de este bloque NO se debe acceder a controles de UI directamente.
+                            string rutaProcesar = rutaOriginal;
+
+                            // Comunicación segura con la ventana de carga (Thread-Safe).
+                            formCarga.ActualizarMensaje("Verificando integridad del archivo...");
+                            formCarga.ActualizarProgreso(5);
+
+                            // 5. Pre-procesamiento / Normalización de Audio
+                            if (opcion.Contains("Whisper"))
                             {
-                                // AQUI DENTRO SOLO LÓGICA, NADA DE 'txtRutaArchivo.Text' NI 'btn...'
-
-                                string rutaProcesar = rutaOriginal; // Usamos la variable capturada arriba
-
-                                // Reportar estado a la ventanita (FormCarga maneja su propio Invoke seguro)
-                                formCarga.ActualizarMensaje("Verificando audio...");
-                                formCarga.ActualizarProgreso(5);
-
-                                // Lógica de preparación de audio (sin tocar UI principal)
-                                if (opcion.Contains("Whisper"))
+                                formCarga.ActualizarMensaje("Optimizando audio para Whisper (WAV 16kHz)...");
+                                // Whisper requiere un formato específico para funcionar óptimamente.
+                                rutaProcesar = await Task.Run(() =>
+                                   AudioConverterHelper.PrepararAudioParaProcesamiento(rutaOriginal,
+                                   Path.Combine(Path.GetTempPath(), "temp_whisper_16k.wav")));
+                            }
+                            else
+                            {
+                                // Para Gemini, verificamos si es necesario convertir formatos no estándar.
+                                string ext = Path.GetExtension(rutaProcesar).ToLower();
+                                if (ext != ".mp3" && ext != ".wav" && ext != ".m4a")
                                 {
-                                    formCarga.ActualizarMensaje("Convirtiendo a WAV 16kHz...");
+                                    formCarga.ActualizarMensaje("Normalizando formato de audio...");
                                     rutaProcesar = await Task.Run(() =>
                                        AudioConverterHelper.PrepararAudioParaProcesamiento(rutaOriginal,
-                                       Path.Combine(Path.GetTempPath(), "temp_whisper_16k.wav")));
+                                       Path.Combine(Path.GetTempPath(), "temp_universal.wav")));
                                 }
-                                else
-                                {
-                                    // Lógica para Gemini/Google
-                                    string ext = Path.GetExtension(rutaProcesar).ToLower();
-                                    if (ext != ".mp3" && ext != ".wav" && ext != ".m4a")
-                                    {
-                                        formCarga.ActualizarMensaje("Normalizando formato...");
-                                        rutaProcesar = await Task.Run(() =>
-                                           AudioConverterHelper.PrepararAudioParaProcesamiento(rutaOriginal,
-                                           Path.Combine(Path.GetTempPath(), "temp_universal.wav")));
-                                    }
-                                }
-
-                                cts.Token.ThrowIfCancellationRequested();
-
-                                // Transcripción
-                                formCarga.ActualizarMensaje($"Motor IA ({opcion}) trabajando...");
-
-                                // Reportadores seguros
-                                var progTexto = new Progress<string>(t => { /* Vacío para no mostrar texto */ });
-                                var progPorc = new Progress<int>(p => formCarga.ActualizarProgreso(p));
-
-                                return await _procesadorAudio.ConvertirATextoAsync(rutaProcesar, progTexto, progPorc, cts.Token);
                             }
-                            finally
-                            {
-                                // Cerramos la ventanita de carga de forma segura
-                                formCarga.Invoke(new Action(() => formCarga.Close()));
-                            }
-                        }, cts.Token);
 
-                        // Mostramos la ventana de carga (Bloquea la UI hasta que se cierre)
-                        formCarga.ShowDialog(this);
+                            // 6. Transcripción
+                            formCarga.ActualizarMensaje($"Ejecutando motor de IA ({opcion})...");
 
-                        // ---------------------------------------------------------
-                        // DE VUELTA A LA ZONA SEGURA (HILO UI)
-                        // ---------------------------------------------------------
+                            // Configuración de reportadores de progreso.
+                            var progTexto = new Progress<string>(t => { /* Opcional: Streaming de texto en tiempo real */ });
+                            var progPorc = new Progress<int>(p => formCarga.ActualizarProgreso(p));
 
-                        // Esperamos el resultado (o excepción)
-                        string textoFinal = await tareaProcesamiento;
+                            return await _procesadorAudio.ConvertirATextoAsync(rutaProcesar, progTexto, progPorc);
+                        }
+                        finally
+                        {
+                            // Aseguramos que la ventana de carga se cierre al terminar, ocurra error o no.
+                            formCarga.Invoke(new Action(() => formCarga.Close()));
+                        }
+                    });
 
-                        // AQUI SÍ podemos tocar cajas de texto y botones de nuevo
-                        txtResultadoTexto.Text = textoFinal;
-                        _textoTranscritorio = textoFinal;
+                    // Mostramos la ventana de carga de forma Modal (bloquea interacción con la ventana principal).
+                    formCarga.ShowDialog(this);
 
-                        MessageBox.Show("¡Proceso completado!", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        MessageBox.Show("Operación cancelada por el usuario.", "Cancelado", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Desenvolver error si viene en AggregateException
-                        string msg = ex.InnerException?.Message ?? ex.Message;
-                        MessageBox.Show($"Error: {msg}", "Fallo", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                    finally
-                    {
-                        // Restaurar el botón (SIEMPRE EN HILO UI)
-                        btnConvertirATexto.Enabled = true;
-                    }
+                    // ---------------------------------------------------------
+                    // RETORNO AL HILO DE UI (Contexto Seguro)
+                    // ---------------------------------------------------------
+
+                    // Esperamos el resultado final. Si hubo excepción en el Task, se lanzará aquí.
+                    string textoFinal = await tareaProcesamiento;
+
+                    // Actualizamos la UI con el resultado.
+                    txtResultadoTexto.Text = textoFinal;
+                    _textoTranscritorio = textoFinal;
+
+                    MessageBox.Show("¡La transcripción se ha completado exitosamente!", "Proceso Finalizado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    // Manejo robusto de errores: Extraemos el mensaje real si está envuelto.
+                    string msg = ex.InnerException?.Message ?? ex.Message;
+                    MessageBox.Show($"Ocurrió un error durante el proceso:\n{msg}", "Error de Procesamiento", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    // Restauramos el estado de la UI (siempre se ejecuta).
+                    btnConvertirATexto.Enabled = true;
                 }
             }
         }
 
-        // --- ENCRIPTACIÓN Y DESENCRIPTACIÓN ---
+        // --- SECCIÓN: SEGURIDAD (ENCRIPTACIÓN) ---
 
         /// <summary>
-        /// Evento que maneja el clic del botón 'Encriptar Texto'. (Criterio 1.3)
-        /// Encripta el texto del área de resultado de la conversión.
+        /// Encripta el texto transcrito utilizando el algoritmo seleccionado (AES).
         /// </summary>
         private void btnEncriptar_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(_textoTranscritorio))
             {
-                MessageBox.Show("Primero debe convertir un audio a texto.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("No hay texto para encriptar. Por favor, realice una transcripción primero.", "Falta Texto", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             try
             {
-                // Criterio 1.3: Al presionar "Encriptar Texto" deberá convertir en AES.
+                // Delegamos la lógica criptográfica al servicio _encriptador.
                 string textoCifrado = _encriptador.Encriptar(_textoTranscritorio);
-
+                
+                // Actualizamos estado y UI.
+                _textoEncriptado = textoCifrado;
                 txtResultadoEncriptado.Text = textoCifrado;
-                MessageBox.Show("Texto encriptado correctamente con AES.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                
+                MessageBox.Show("El texto ha sido encriptado y protegido correctamente.", "Encriptación Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al encriptar: {ex.Message}", "Error de Encriptación", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error al intentar encriptar: {ex.Message}", "Fallo de Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         /// <summary>
-        /// Evento que maneja el clic del botón 'Desencriptar Texto'. (Criterio 1.3 Opcional)
-        /// Desencripta el texto del área de resultado de la encriptación.
+        /// Intenta desencriptar el texto cifrado para verificar la reversibilidad del proceso.
         /// </summary>
         private void btnDesencriptar_Click(object sender, EventArgs e)
         {
-            string textoCifrado = txtResultadoEncriptado.Text;
+            string textoCifrado = _textoEncriptado;
 
             if (string.IsNullOrEmpty(textoCifrado))
             {
-                MessageBox.Show("Primero debe encriptar el texto.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("No hay contenido encriptado para procesar.", "Acción Inválida", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             try
             {
-                // Criterio 1.3 Opcional: Desencriptar.
                 string textoDesencriptado = _encriptador.Desencriptar(textoCifrado);
 
-                // Mostramos el texto original en la caja de resultado de la conversión,
-                // verificando que la operación fue exitosa.
+                // Verificación de redundancia visual.
+                if (textoDesencriptado == txtResultadoEncriptado.Text)
+                {
+                    MessageBox.Show("El texto ya se encuentra desencriptado.", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information); 
+                    return;
+                }
+
+                // Restauramos el texto original en la caja correspondiente para validación visual.
                 txtResultadoEncriptado.Text = textoDesencriptado;
 
-                // Nota para el usuario: Se confirma que la desencriptación es exitosa.
-                MessageBox.Show("Desencriptación completada. El texto original ha sido restaurado en la caja de conversión.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("El texto original ha sido recuperado exitosamente.", "Desencriptación Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al desencriptar. Clave o formato incorrecto: {ex.Message}", "Error de Desencriptación", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"No se pudo desencriptar el texto. Posible corrupción de datos o clave incorrecta.\nDetalle: {ex.Message}", "Error de Desencriptación", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // --- SECCIÓN: ANÁLISIS BINARIO/HEXADECIMAL ---
+
+        /// <summary>
+        /// Inicia la extracción y visualización del código máquina (Binario o Hexadecimal) del archivo.
+        /// </summary>
+        private async void btnVerBinario_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtRutaArchivo.Text) || !File.Exists(txtRutaArchivo.Text))
+            {
+                MessageBox.Show("Debe seleccionar un archivo válido para analizar.", "Archivo Requerido", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Configuración dinámica del servicio según selección del usuario.
+            int opcion = ConfigOpcionConverter.SelectedIndex;
+
+            if (opcion == 0)
+            {
+                this._servicioBinarioHexadecimal = new BinarioService();
+            }
+            else if (opcion == 1)
+            {
+                this._servicioBinarioHexadecimal = new HexadecimalConverterService();
+            }
+
+            using (var formCarga = new FormCarga())
+            {
+                try
+                {
+                    btnVerBinarioHex.Enabled = false;
+                    txtResultadoTextoMaquina.Clear();
+                    _textoMaquina = string.Empty;
+
+                    // Ejecución asíncrona para lectura de archivos grandes.
+                    Task<string> tareaHex = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            formCarga.ActualizarMensaje("Analizando estructura del archivo...");
+                            var progPorc = new Progress<int>(p => formCarga.ActualizarProgreso(p));
+
+                            return await _servicioBinarioHexadecimal.ObtenerConvercionDelArchivoAsync(txtRutaArchivo.Text, progPorc);
+                        }
+                        finally
+                        {
+                            formCarga.Invoke(new Action(() => formCarga.Close()));
+                        }
+                    });
+
+                    formCarga.ShowDialog(this);
+
+                    string codigoMaquina = await tareaHex;
+
+                    // Optimización de rendimiento UI:
+                    // Si el resultado es masivo, truncamos la visualización para evitar que la interfaz se congele al renderizar el texto.
+                    // Sin embargo, mantenemos el resultado completo en memoria (_textoMaquina) por si se necesita procesar.
+                    if (codigoMaquina.Length > 50000)
+                    {
+                        txtResultadoTextoMaquina.Text = "⚠️ VISTA PREVIA LIMITADA (Archivo Grande)\r\n" +
+                                                 "Mostrando los primeros 50,000 caracteres:\r\n\r\n" +
+                                                 codigoMaquina.Substring(0, 50000) + "...";
+                    }
+                    else
+                    {
+                        txtResultadoTextoMaquina.Text = codigoMaquina;
+                    }
+
+                    _textoMaquina = codigoMaquina;
+
+                    MessageBox.Show("Análisis de código máquina completado.", "Operación Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error durante el análisis: {ex.Message}", "Fallo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    btnVerBinarioHex.Enabled = true;
+                }
             }
         }
     }

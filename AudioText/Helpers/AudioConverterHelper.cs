@@ -1,52 +1,55 @@
-﻿
-using NAudio.Wave; // Necesario para Mp3FileReader y WaveFileWriter
-using System.Diagnostics; // Ya lo tienes, para Debug.WriteLine
+﻿using NAudio.Wave; // Necesario para Mp3FileReader y WaveFileWriter
+using System.Diagnostics; // Para Debug.WriteLine
 
 namespace AudioText.Helpers
 {
     /// <summary>
-    /// Clase auxiliar para manejar la conversión de formatos de audio (MP3 a WAV).
-    /// Esta es una responsabilidad secundaria, separada del procesamiento principal (Cumple SRP).
+    /// Clase auxiliar estática encargada de la normalización y conversión de archivos de audio.
+    /// Su responsabilidad principal es asegurar que el audio tenga el formato requerido (WAV 16kHz Mono) antes de ser procesado.
     /// </summary>
     public static class AudioConverterHelper
     {
         /// <summary>
-        /// Convierte el archivo de audio subido (MP3, etc.) a formato WAV, si es necesario.
-        /// (Criterio 1.1: Controlar formatos no deseados, convirtiéndolos internamente).
+        /// Prepara un archivo de audio para su procesamiento, convirtiéndolo a formato WAV con una frecuencia de muestreo de 16kHz y canal mono.
+        /// Este formato es el estándar requerido por modelos como Whisper para una transcripción óptima.
         /// </summary>
-        /// <param name="rutaArchivoOriginal">La ruta del archivo subido por el usuario.</param>
-        /// <param name="rutaDestinoTemp">La ruta donde se guardará el archivo WAV temporal.</param>
-        /// <returns>La ruta del archivo WAV listo para ser procesado.</returns>
+        /// <param name="rutaArchivoOriginal">Ruta absoluta del archivo de audio original (ej: .mp3, .wav, .m4a).</param>
+        /// <param name="rutaDestinoTemp">Ruta absoluta donde se guardará el archivo temporal convertido.</param>
+        /// <returns>La ruta del archivo convertido listo para ser procesado.</returns>
+        /// <exception cref="InvalidOperationException">Se lanza si ocurre un error durante la conversión o lectura del archivo de audio.</exception>
         public static string PrepararAudioParaProcesamiento(string rutaArchivoOriginal, string rutaDestinoTemp)
         {
             string extension = Path.GetExtension(rutaArchivoOriginal).ToLower();
 
             try
             {
-                Debug.WriteLine($"Procesando audio: {rutaArchivoOriginal}");
+                Debug.WriteLine($"Iniciando conversión de audio: {rutaArchivoOriginal}");
 
-                // Usamos AudioFileReader de NAudio que maneja MP3, WAV, AIFF, etc.
+                // Utilizamos AudioFileReader de NAudio, que es capaz de leer múltiples formatos (MP3, WAV, AIFF, etc.) de forma transparente.
                 using (var reader = new AudioFileReader(rutaArchivoOriginal))
                 {
-                    // Configuración deseada para Whisper: 16000 Hz, 1 canal (Mono)
+                    // Definimos el formato de salida objetivo: 16000 Hz, 1 canal (Mono).
+                    // Whisper funciona mejor con audio a 16kHz.
                     var outFormat = new WaveFormat(16000, 1);
 
-                    // Usamos MediaFoundationResampler para cambiar la calidad a 16kHz
+                    // Utilizamos MediaFoundationResampler para realizar el re-muestreo (resampling) de alta calidad.
                     using (var resampler = new MediaFoundationResampler(reader, outFormat))
                     {
-                        resampler.ResamplerQuality = 60; // Calidad decente
+                        // Establecemos la calidad del resampler. 60 es un valor equilibrado entre calidad y velocidad.
+                        resampler.ResamplerQuality = 60;
 
-                        // Guardamos el archivo procesado
+                        // Escribimos el flujo de audio re-muestreado al archivo de destino.
                         WaveFileWriter.CreateWaveFile(rutaDestinoTemp, resampler);
                     }
                 }
 
-                Debug.WriteLine($"Audio convertido a 16kHz exitosamente: {rutaDestinoTemp}");
+                Debug.WriteLine($"Conversión completada exitosamente: {rutaDestinoTemp}");
                 return rutaDestinoTemp;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Error al convertir audio para Whisper (Se requiere WAV 16kHz): {ex.Message}");
+                // Envolvemos la excepción original para proporcionar un contexto más claro sobre el error.
+                throw new InvalidOperationException($"Error crítico al convertir el audio. Asegúrese de que el archivo no esté corrupto. Detalle: {ex.Message}", ex);
             }
         }
     }

@@ -21,6 +21,9 @@ namespace AudioText.Presentacion.Ventanas
         // Método seguro para actualizar la barra desde otro hilo
         public void ActualizarProgreso(int porcentaje)
         {
+            // Si la ventana ya se cerró o se está cerrando, no hacemos nada.
+            if (this.IsDisposed || !this.IsHandleCreated) return;
+
             if (this.InvokeRequired)
             {
                 this.Invoke(new Action(() => ActualizarProgreso(porcentaje)));
@@ -35,6 +38,9 @@ namespace AudioText.Presentacion.Ventanas
         // Método seguro para actualizar el texto desde otro hilo
         public void ActualizarMensaje(string texto)
         {
+            // Si la ventana ya se cerró o se está cerrando, no hacemos nada.
+            if (this.IsDisposed || !this.IsHandleCreated) return;
+
             if (this.InvokeRequired)
             {
                 this.Invoke(new Action(() => ActualizarMensaje(texto)));
